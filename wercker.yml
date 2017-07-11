@@ -1,0 +1,39 @@
+dev:
+   box:
+      id: shinya/sbt
+      ports:
+       - '9000'
+   steps:
+    - script:
+         code: |
+            [[ ! -e "$WERCKER_CACHE_DIR/ivy2-cache" ]] && mv ~/.ivy2/cache "$WERCKER_CACHE_DIR/ivy2-cache"
+            rm -rf ~/.ivy2/cache
+            ln -s "$WERCKER_CACHE_DIR/ivy2-cache" ~/.ivy2/cache
+    - script:
+         code: |
+            rm -rf target project/target
+    - internal/watch:
+         reload: true
+         code: |
+            sbt run
+    - script:
+         code: |
+            rm -rf target project/target
+build:
+   box: java:8
+   steps:
+    - script:
+         code: touch "$WERCKER_OUTPUT_DIR/dummy"
+deploy:
+   box: java:8
+   steps:
+    - script:
+         code: |
+            echo 'deb http://dl.bintray.com/sbt/debian /' > /etc/apt/sources.list.d/sbt.list
+            apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 2EE0EA64E40A89B84B2DF73499E82A75642AC823
+    - install-packages:
+         packages: sbt
+    - internal/docker-push:
+         username: $USERNAME
+         password: $PASSWORD
+         repository: shinya/sbt
